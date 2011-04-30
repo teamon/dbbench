@@ -1,0 +1,36 @@
+package com.verknowsys.dbbench
+
+import org.squeryl._
+import org.squeryl.adapters._
+import org.squeryl.PrimitiveTypeMode._
+
+class PostgresClient extends Database {
+    val conn = java.sql.DriverManager.getConnection("jdbc:postgresql:base1", "teamon", "")
+    conn.setAutoCommit(false);
+    val session = Session.create(conn, new PostgreSqlAdapter)
+    session.bindToCurrentThread
+    
+    RDBMS.close     // drop tables
+    RDBMS.create    // create tables
+    
+    
+    def disconnect {
+        session.close
+    }
+    
+    def save(obj: Any) {
+        obj match {
+            case x: ProcessInfo => RDBMS.processes.insert(x)
+        }
+    }
+}
+
+object RDBMS extends Schema {
+    val processes = table[ProcessInfo]
+    
+    // on(processes)(p => declare(
+    //     p.pid is(indexed)
+    // ))
+    
+    def close = drop
+}

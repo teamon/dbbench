@@ -1,0 +1,22 @@
+#!/usr/bin/env ruby
+
+require "rubygems"
+require "awesome_print"
+
+names = ["noop", "neodatis local", "neodatis remote", "postgres"]
+
+File.open("/tmp/graph.g", "w"){|g|
+  g.puts 'set terminal postscript enhanced color'
+  g.puts 'set output "| pstopdf -i -o graph.pdf"'
+  g.puts 'set xlabel "No."'
+  g.puts 'set ylabel "Time (s)"'
+  g.print "plot "
+  g.puts readlines.join.scan(/====\n(.+?\n.+?\n.+?\n.+?\n)/m).map {|res, *|
+    res.split("\n").map{|e| e.split.last.to_f}
+  }.transpose.map.with_index {|e,i|
+    File.open("/tmp/data#{i}.dat", "w"){|f| f.puts e.join("\n") }
+    "'/tmp/data#{i}.dat' title '#{names[i]}' with lines"
+  }.join(", ")
+}
+system "gnuplot -p /tmp/graph.g"
+open "graph.pdf"
