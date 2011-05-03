@@ -1,24 +1,32 @@
 package com.verknowsys.dbbench
 
 object Benchmark {
-    case class BenchmarkReport(name: String, f: () => Unit){
-        def run(n: Int) = {
-            val start = System.currentTimeMillis
-            (1 to n) foreach { i => f() }
-            val time = System.currentTimeMillis - start
-            (name, time)
+    def benchmark(n: Int)(f: => List[(String, Long)]) = {
+        val results = (1 to n).map(e => f).flatten.groupBy(_._1).mapValues { e => e.map(_._2) }
+        
+        println("Name                   Times")
+        println("=" * (n * 11 + 33))
+        
+        results.map { case(name, times) =>
+            printf("%-20s", name)
+            times foreach { i => printf(" %10f", i / 1000.0) }
+            val m = median(times);
+            printf(" | %10f", m / 1000.0) 
+            println()
+            (name, times, m)
         }
     }
     
-    def benchmark(n: Int)(reports: List[BenchmarkReport]) = {
-        val results = reports.map(_.run(n))
-        println("Name                    Time(s)")
-        println("===============================")
-        results.foreach { case (name, time) =>
-            printf("%-20s %10f\n", name, time / 1000.0)
-        }
-        results
+    def median(values: Seq[Long]) = {
+        val vals = values.sorted
+        if(vals.length % 2 == 0) (vals(vals.length / 2 - 1) + vals(vals.length / 2)) / 2
+        else vals(vals.length / 2)
     }
     
-    def report(name: String)(f: => Unit) = BenchmarkReport(name, f _)
+    def report(name: String)(f: => Unit) = {
+        val start = System.currentTimeMillis
+        f
+        val time = System.currentTimeMillis - start
+        (name, time)
+    }
 }

@@ -9,27 +9,41 @@ import java.io.File
 
 
 object App {
-    def databases = Map(
-        "noop"            -> new NoopClient,
-        "neodatis local"  -> new NeodatisLocalClient,
-        "neodatis remote" -> new NeodatisRemoteClient,
-        "postgres"        -> new PostgresClient
+    val databases = Map(
+        "noop"            -> (() => new NoopClient),
+        "neodatis local"  -> (() => new NeodatisLocalClient),
+        "neodatis remote" -> (() => new NeodatisRemoteClient),
+        "postgres"        -> (() => new PostgresClient)
     )
     
+    // def databases = Map(
+    //     "1x" -> (() => new PostgresBatchClient(1))
+    //     // "10x" -> new PostgresBatchClient(10)
+    //     // "100x" -> new PostgresBatchClient(100),
+    //     // "1000x" -> new PostgresBatchClient(1000),
+    //     // "10000x" -> new PostgresBatchClient(10000)
+    //     // "100000x" -> new PostgresBatchClient(100000)
+    // )
+    
+    
+    // def benchmarkBatchSave(db: Database){
+    //     db.saveBatch
+    // }
+    // 
     def benchmarkSaveOne(db: Database){
-        100 times { 
+        10000 times { 
             db.save(new ProcessInfo(10, 20, 30, "foo"))
         }
     }
     
     def benchmarkSaveList(db: Database){
-        1 times {
+        10 times {
             db.saveList((1 to 100).map(new ProcessInfo(_, 20, 30, "foo")))
         }
     }
     
     def benchmarkSaveAndCommit(db: Database){
-        100 times {
+        10000 times {
             db.saveAndCommit(new ProcessInfo(10, 20, 30, "foo"))
         }
     }
@@ -39,31 +53,30 @@ object App {
             "save_one" -> benchmarkSaveOne _,
             "save_list" -> benchmarkSaveList _,
             "save_and_commit" -> benchmarkSaveAndCommit _
+            // "save_batch" -> benchmarkBatchSave _
         )
         
-        saveResults(benchmarks.mapValues { bench => 
-            println()
-            println()
-            println("[binfo] *** Benchmarking " + bench + " ***")
-            
-            (1 to 10) map { i =>
+        saveResults(
+            benchmarks.mapValues { bench => 
                 println()
-                println("[binfo] *** Take " + i + " of 10 ***")
-                val dbs = databases
-                
-                val res = benchmark(100){
-                    dbs.toList.map { case(name, db) =>
-                        report(name){ bench(db) }
+                println()
+                println("[binfo] *** Benchmarking " + bench + " ***")
+            
+                benchmark(10){
+                    databases.toList.map { case(name, dbf) =>
+                        val db = dbf()
+                        val res = report(name){
+                            bench(db)
+                        }
+                        db.disconnect
+                        res
                     }
                 }
-                
-                dbs.foreach(_._2.disconnect)
-                res
             }
-        })
+        )
     }
     
-    def saveResults(res: Map[String, Seq[List[(String, Long)]]]){
+    def saveResults(res: Map[String, Iterable[(String, Iterable[Long], Long)]]){
         res.foreach { case(benchName, results) =>
             val graphfile = "target/bench_" + benchName + ".g"
             val pdffile = "target/bench_" + benchName + ".pdf"
@@ -74,14 +87,10 @@ object App {
                 b.println("set ylabel \"Time (s)\"")
                 b.print("plot ")
                 
-                b.println(results.map(_.toMap).foldLeft(Map[String, List[Long]]()) { case(s,e) => 
-                    e.foldLeft(Map[String, List[Long]]()){ case(xs,x) => 
-                        xs + ((x._1, x._2 :: s.get(x._1).getOrElse(Nil))) 
-                    } 
-                }.mapValues(_.reverse).toList.map { case(name, values) => 
+                b.println(results.map { case(name, times, med) => 
                     val filename = "target/" + benchName.replaceAll(" ", "_") + "_" + name + ".dat"
                     printToFile(filename){ p =>
-                        values.foreach(p.println)
+                        times.foreach(p.println)
                     }
                     "'" + filename + "' title '" + name + "' with lines"
                 }.mkString(","))

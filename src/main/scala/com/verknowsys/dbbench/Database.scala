@@ -8,6 +8,7 @@ trait Database {
     def saveAndCommit(obj: Any)
     def saveList(list: Seq[Any])
     def disconnect
+    def saveBatch {}
 }
 
 class NoopClient extends Database {
