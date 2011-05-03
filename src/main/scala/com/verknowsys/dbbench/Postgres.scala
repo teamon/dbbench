@@ -5,9 +5,16 @@ import org.squeryl.adapters._
 import org.squeryl.PrimitiveTypeMode._
 
 class PostgresClient extends Database {
-    val conn = java.sql.DriverManager.getConnection("jdbc:postgresql:base1", "teamon", "")
-    conn.setAutoCommit(false);
-    val session = Session.create(conn, new PostgreSqlAdapter)
+    SessionFactory.concreteFactory = Some(() => {
+        val conn = java.sql.DriverManager.getConnection("jdbc:postgresql:base1", "teamon", "")
+        conn.setAutoCommit(false);
+        Session.create(conn, new PostgreSqlAdapter)
+    })
+    
+    
+    // val conn = java.sql.DriverManager.getConnection("jdbc:postgresql:base1", "teamon", "")
+    // conn.setAutoCommit(false);
+    val session = SessionFactory.concreteFactory.get()
     session.bindToCurrentThread
     
     RDBMS.close     // drop tables
@@ -20,7 +27,24 @@ class PostgresClient extends Database {
     
     def save(obj: Any) {
         obj match {
-            case x: ProcessInfo => RDBMS.processes.insert(x)
+            case x: ProcessInfo => 
+                RDBMS.processes.insert(x)
+        }
+    }
+    
+    def saveList(list: Seq[Any]){
+        list match {
+            case x: Seq[ProcessInfo] =>
+                RDBMS.processes.insert(x)
+        }
+    }
+    
+    def saveAndCommit(obj: Any) {
+        obj match {
+            case x: ProcessInfo => 
+                inTransaction { 
+                    RDBMS.processes.insert(x) 
+                }
         }
     }
 }

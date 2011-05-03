@@ -13,6 +13,15 @@ trait AbstractNeodatisClient extends Database {
     def save(obj: Any) {
         odb.store(obj)
     }
+    
+    def saveAndCommit(obj: Any) {
+        odb.store(obj)
+        odb.commit()
+    }
+    
+    def saveList(list: Seq[Any]){
+        list.foreach(odb.store)
+    }
 }
 
 
