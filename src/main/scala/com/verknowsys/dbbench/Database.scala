@@ -16,4 +16,16 @@ class NoopClient extends Database {
     def saveAndCommit(obj: Any) {}
     def saveList(list: Seq[Any]){}
     def disconnect {}
+
+}
+
+class NoopBatchClient(n: Int) extends NoopClient {
+    override def saveBatch {
+        (1 to (100000 / n)) foreach { i =>
+            println(i)
+            (1 to n) foreach { k =>
+                
+            }
+        }
+    }
 }

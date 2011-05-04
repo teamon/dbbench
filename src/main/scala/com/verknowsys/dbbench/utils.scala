@@ -2,7 +2,10 @@ package com.verknowsys.dbbench
 
 object Benchmark {
     def benchmark(n: Int)(f: => List[(String, Long)]) = {
-        val results = (1 to n).map(e => f).flatten.groupBy(_._1).mapValues { e => e.map(_._2) }
+        val results = (1 to n).map { i =>
+            println("[binfo] Take " + i)
+            f
+        }.flatten.groupBy(_._1).mapValues { e => e.map(_._2) }
         
         println("Name                   Times")
         println("=" * (n * 11 + 33))
@@ -24,6 +27,7 @@ object Benchmark {
     }
     
     def report(name: String)(f: => Unit) = {
+        println("[binfo] Running " + name)
         val start = System.currentTimeMillis
         f
         val time = System.currentTimeMillis - start

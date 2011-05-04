@@ -9,15 +9,10 @@ import java.io.File
 
 
 object App {
-    val databases = Map(
-        "noop"            -> (() => new NoopClient),
-        "neodatis local"  -> (() => new NeodatisLocalClient),
-        "neodatis remote" -> (() => new NeodatisRemoteClient),
-        "postgres"        -> (() => new PostgresClient)
-    )
+
     
     // def databases = Map(
-    //     "1x" -> (() => new PostgresBatchClient(1))
+    //     "1x", () => new PostgresBatchClient(1))
     //     // "10x" -> new PostgresBatchClient(10)
     //     // "100x" -> new PostgresBatchClient(100),
     //     // "1000x" -> new PostgresBatchClient(1000),
@@ -26,10 +21,10 @@ object App {
     // )
     
     
-    // def benchmarkBatchSave(db: Database){
-    //     db.saveBatch
-    // }
-    // 
+    def benchmarkBatchSave(db: Database){
+        db.saveBatch
+    }
+    
     def benchmarkSaveOne(db: Database){
         10000 times { 
             db.save(new ProcessInfo(10, 20, 30, "foo"))
@@ -49,34 +44,131 @@ object App {
     }
     
     def main(args: Array[String]): Unit = {
-        val benchmarks = Map(
-            "save_one" -> benchmarkSaveOne _,
-            "save_list" -> benchmarkSaveList _,
-            "save_and_commit" -> benchmarkSaveAndCommit _
-            // "save_batch" -> benchmarkBatchSave _
-        )
+        println("automaticallyIncreaseCacheSize         = " + OdbConfiguration.automaticallyIncreaseCacheSize())
+        println("automaticCloseFileOnExit               = " + OdbConfiguration.automaticCloseFileOnExit())
+        println("checkModelCompatibility                = " + OdbConfiguration.checkModelCompatibility())
+        println("checkRuntimeVersion                    = " + OdbConfiguration.checkRuntimeVersion())
+        println("displayWarnings                        = " + OdbConfiguration.displayWarnings())
+        println("enableEmptyConstructorCreation         = " + OdbConfiguration.enableEmptyConstructorCreation())
+        println("hasEncoding                            = " + OdbConfiguration.hasEncoding())
+        println("inPlaceUpdate                          = " + OdbConfiguration.inPlaceUpdate())
+        println("isDebugEnabled                         = " + OdbConfiguration.isDebugEnabled())
+        println("isEnableAfterWriteChecking             = " + OdbConfiguration.isEnableAfterWriteChecking())
+        println("isInfoEnabled                          = " + OdbConfiguration.isInfoEnabled())
+        println("isLogAll                               = " + OdbConfiguration.isLogAll())
+        println("isMonitoringMemory                     = " + OdbConfiguration.isMonitoringMemory())
+        println("isMultiThread                          = " + OdbConfiguration.isMultiThread())
+        println("lockObjectsOnSelect                    = " + OdbConfiguration.lockObjectsOnSelect())
+        println("logServerConnections                   = " + OdbConfiguration.logServerConnections())
+        println("logServerStartupAndShutdown            = " + OdbConfiguration.logServerStartupAndShutdown())
+        println("multiThreadExclusive                   = " + OdbConfiguration.multiThreadExclusive())
+        println("reconnectObjectsToSession              = " + OdbConfiguration.reconnectObjectsToSession())
+        println("retryIfFileIsLocked                    = " + OdbConfiguration.retryIfFileIsLocked())
+        println("saveHistory                            = " + OdbConfiguration.saveHistory())
+        println("shareSameVmConnectionMultiThread       = " + OdbConfiguration.shareSameVmConnectionMultiThread())
+        println("throwExceptionWhenInconsistencyFound   = " + OdbConfiguration.throwExceptionWhenInconsistencyFound())
+        println("useCache                               = " + OdbConfiguration.useCache())
+        println("useIndex                               = " + OdbConfiguration.useIndex())
+        println("useLazyCache                           = " + OdbConfiguration.useLazyCache())
+        println("useMultiBuffer                         = " + OdbConfiguration.useMultiBuffer())
+        println("ClassLoader                            = " + OdbConfiguration.getClassLoader())
+        println("CoreProvider                           = " + OdbConfiguration.getCoreProvider())
+        println("DatabaseCharacterEncoding              = " + OdbConfiguration.getDatabaseCharacterEncoding())
+        println("DatabaseStartupManager                 = " + OdbConfiguration.getDatabaseStartupManager())
+        println("DebugLevel                             = " + OdbConfiguration.getDebugLevel())
+        println("DefaultBufferSizeForData               = " + OdbConfiguration.getDefaultBufferSizeForData())
+        println("DefaultBufferSizeForTransaction        = " + OdbConfiguration.getDefaultBufferSizeForTransaction())
+        println("DefaultFileCreationTime                = " + OdbConfiguration.getDefaultFileCreationTime())
+        println("DefaultIndexBTreeDegree                = " + OdbConfiguration.getDefaultIndexBTreeDegree())
+        println("EncryptionPassword                     = " + OdbConfiguration.getEncryptionPassword())
+        println("ID_BLOCK_REPETITION_SIZE               = " + OdbConfiguration.getID_BLOCK_REPETITION_SIZE())
+        println("IdBlockSize                            = " + OdbConfiguration.getIdBlockSize())
+        println("IOClass                                = " + OdbConfiguration.getIOClass())
+        println("MaxNumberOfObjectInCache               = " + OdbConfiguration.getMaxNumberOfObjectInCache())
+        println("MaxNumberOfWriteObjectPerTransaction   = " + OdbConfiguration.getMaxNumberOfWriteObjectPerTransaction())
+        println("MessageStreamerClass                   = " + OdbConfiguration.getMessageStreamerClass())
+        println("NB_IDS_PER_BLOCK                       = " + OdbConfiguration.getNB_IDS_PER_BLOCK())
+        println("NbBuffers                              = " + OdbConfiguration.getNbBuffers())
+        println("NumberOfRetryToOpenFile                = " + OdbConfiguration.getNumberOfRetryToOpenFile())
+        println("QueryExecutorCallback                  = " + OdbConfiguration.getQueryExecutorCallback())
+        println("RetryTimeout                           = " + OdbConfiguration.getRetryTimeout())
+        println("RoundTypeForAverageDivision            = " + OdbConfiguration.getRoundTypeForAverageDivision())
+        println("ScaleForAverageDivision                = " + OdbConfiguration.getScaleForAverageDivision())
+        println("StringSpaceReserveFactor               = " + OdbConfiguration.getStringSpaceReserveFactor())
+        println("TimeoutToAcquireMutexInMultiThread     = " + OdbConfiguration.getTimeoutToAcquireMutexInMultiThread())
         
-        saveResults(
-            benchmarks.mapValues { bench => 
-                println()
-                println()
-                println("[binfo] *** Benchmarking " + bench + " ***")
-            
-                benchmark(10){
-                    databases.toList.map { case(name, dbf) =>
-                        val db = dbf()
-                        val res = report(name){
-                            bench(db)
+        NeodatisConfig()
+        
+        Console.readLine()
+        
+        val benchmarks = 
+        // (
+        //     Map(
+        //         "noop"           , () => new NoopClient),
+        //         "neodatis local" , () => new NeodatisLocalClient),
+        //         "neodatis remote", () => new NeodatisRemoteClient),
+        //         "postgres"       , () => new PostgresClient)
+        //     ),
+        //     Map(
+        //         "save_one" -> benchmarkSaveOne _
+        //         // "save_list" -> benchmarkSaveList _,
+        //         // "save_and_commit" -> benchmarkSaveAndCommit _
+        //         // "save_batch" -> benchmarkBatchSave _
+        //     )
+        // ) :: 
+        (
+            (
+                ("noop 10x" , () => new NoopBatchClient(10)) ::
+                ("noop 100x" , () => new NoopBatchClient(100)) ::
+                ("noop 1000x" , () => new NoopBatchClient(1000)) ::
+                // ("1x"   , () => new PostgresBatchClient(1)) ::
+                ("postgres 10x"  , () => new PostgresBatchClient(10)) ::
+                ("postgres 100x" , () => new PostgresBatchClient(100)) ::
+                ("postgres 1000x", () => new PostgresBatchClient(1000)) ::
+                
+                ("neodatis local 10x"  , () => new NeodatisLocalBatchClient(10)) ::
+                ("neodatis local 100x" , () => new NeodatisLocalBatchClient(100)) ::
+                ("neodatis local 1000x", () => new NeodatisLocalBatchClient(1000)) ::
+                // ("neodatis local 10000x", () => new NeodatisLocalBatchClient(10000)) ::
+                
+                ("neodatis remote 10x"  , () => new NeodatisRemoteBatchClient(10)) ::
+                ("neodatis remote 100x" , () => new NeodatisRemoteBatchClient(100)) ::
+                ("neodatis remote 1000x", () => new NeodatisRemoteBatchClient(1000)) ::
+                // ("neodatis remote 10000x", () => new NeodatisRemoteBatchClient(10000)) ::
+                // ("10000x", () => new PostgresBatchClient(10000)) ::
+                // ("100000x", () => new PostgresBatchClient(100000)) ::
+                Nil
+            ),
+            (
+                ("save_batch", benchmarkBatchSave _) :: 
+                Nil
+            )
+        ) :: 
+        Nil
+        
+        benchmarks foreach { case(databases, benchs) =>
+            saveResults(
+                benchs.map { case(name, bench) => 
+                    println()
+                    println()
+                    println("[binfo] *** Benchmarking " + bench + " ***")
+
+                    (name, benchmark(3){
+                        databases.toList.map { case(name, dbf) =>
+                            val db = dbf()
+                            val res = report(name){
+                                bench(db)
+                            }
+                            db.disconnect
+                            res
                         }
-                        db.disconnect
-                        res
-                    }
+                    })
                 }
-            }
-        )
+            )
+        }
     }
     
-    def saveResults(res: Map[String, Iterable[(String, Iterable[Long], Long)]]){
+    def saveResults(res: List[(String, Iterable[(String, Iterable[Long], Long)])]){
         res.foreach { case(benchName, results) =>
             val graphfile = "target/bench_" + benchName + ".g"
             val pdffile = "target/bench_" + benchName + ".pdf"

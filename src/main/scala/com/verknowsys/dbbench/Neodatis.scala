@@ -3,7 +3,15 @@ package com.verknowsys.dbbench
 import org.neodatis.odb._
 import java.io.File
 
-trait AbstractNeodatisClient extends Database {    
+object NeodatisConfig {
+    def apply(){
+        // OdbConfiguration.setMaxNumberOfObjectInCache(10)
+        // OdbConfiguration.setUseCache(false)
+    }
+}
+
+trait AbstractNeodatisClient extends Database {
+    
     val odb: ODB
     
     def disconnect {
@@ -41,12 +49,43 @@ class NeodatisLocalClient extends AbstractNeodatisClient {
     }
 }
 
+class NeodatisLocalBatchClient(n: Int) extends NeodatisLocalClient {
+    override def saveBatch {
+        (1 to (100000 / n)) foreach { i =>
+            println(i)
+            (1 to n) foreach { k =>
+                odb.store(new ProcessInfo(k, 20, 30, "foo"))
+            }
+            odb.commit
+        }
+    }
+}
+
 class NeodatisRemoteClient extends AbstractNeodatisClient {
     val odb = ODBFactory.openClient("localhost", 9002, "base02");
 }
 
+class NeodatisRemoteBatchClient(n: Int) extends NeodatisRemoteClient {
+    override def saveBatch {
+        (1 to (100000 / n)) foreach { i =>
+            println(i)
+            (1 to n) foreach { k =>
+                odb.store(new ProcessInfo(k, 20, 30, "foo"))
+            }
+            odb.commit
+        }
+        
+        // (1 to n) foreach { i =>
+        //     println(i)
+        //     odb.store(new ProcessInfo(i, 20, 30, "foo"))
+        //     odb.commit
+        // }
+    }
+}
+
 object NeodatisRemoteServer {
     def main(args: Array[String]) {
+        NeodatisConfig()
         val server = ODBFactory.openServer(9002)
         server.addBase("base02", "/tmp/base02.neodatis")
         server.startServer(true)

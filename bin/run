@@ -1,0 +1,4 @@
+#!/bin/sh
+
+export OPTS="-Xmx512M -Xss2M"
+java $OPTS -cp target/scala_2.8.1/dbbench-assembly-1.0.jar $@
