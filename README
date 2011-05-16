@@ -1,0 +1,8 @@
+OBJECT(int, int, int, string, datetime)
+
+1. Storing 100,000 objects packed by 1, 10, 100, 1,000, 10,000 (no-index)
+  a) Benchmark time
+  b) Benchmark disk space used
+
+2. Query via string field for datetime range
+3. Query SUM(int) for datetime range

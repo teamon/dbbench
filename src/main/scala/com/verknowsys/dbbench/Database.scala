@@ -18,14 +18,3 @@ class NoopClient extends Database {
     def disconnect {}
 
 }
-
-class NoopBatchClient(n: Int) extends NoopClient {
-    override def saveBatch {
-        (1 to (100000 / n)) foreach { i =>
-            println(i)
-            (1 to n) foreach { k =>
-                
-            }
-        }
-    }
-}

@@ -10,11 +10,11 @@ object Benchmark {
         println("Name                   Times")
         println("=" * (n * 11 + 33))
         
-        results.map { case(name, times) =>
+        results.toList.sortBy(_._1).map { case(name, times) =>
             printf("%-20s", name)
-            times foreach { i => printf(" %10f", i / 1000.0) }
+            times foreach { i => printf("\t %10f", i / 1000.0) }
             val m = median(times);
-            printf(" | %10f", m / 1000.0) 
+            printf(" |\t %10f", m / 1000.0) 
             println()
             (name, times, m)
         }

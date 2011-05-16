@@ -6,8 +6,8 @@ import org.squeryl.PrimitiveTypeMode._
 
 class PostgresBatchClient(n: Int) extends PostgresClient {
     override def saveBatch {
-        (1 to (100000 / n)) foreach { i =>
-            println(i)
+        (1 to (App.N / n)) foreach { i =>
+            // println(i)
             saveList((1 to n).map(new ProcessInfo(_, 20, 30, "foo")))
         }
     }

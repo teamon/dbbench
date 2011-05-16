@@ -3,20 +3,28 @@
 require "rubygems"
 require "awesome_print"
 
-names = ["noop", "neodatis local", "neodatis remote", "postgres"]
+
+labels = (0..4).map {|e| "#{10**e}x" }
+names = ["neodatis local", "neodatis remote", "noop", "postgres"]
+
 
 File.open("/tmp/graph.g", "w"){|g|
   g.puts 'set terminal postscript enhanced color'
   g.puts 'set output "| pstopdf -i -o graph.pdf"'
-  g.puts 'set xlabel "No."'
   g.puts 'set ylabel "Time (s)"'
+  g.puts 'set xtics rotate'
+  g.puts 'set style data histogram'
+  g.puts 'set style histogram cluster gap 1'
+  g.puts 'set style fill solid border -1'
+  g.puts 'set boxwidth 0.9'
   g.print "plot "
-  g.puts readlines.join.scan(/====\n(.+?\n.+?\n.+?\n.+?\n)/m).map {|res, *|
-    res.split("\n").map{|e| e.split.last.to_f}
-  }.transpose.map.with_index {|e,i|
-    File.open("/tmp/data#{i}.dat", "w"){|f| f.puts e.join("\n") }
-    "'/tmp/data#{i}.dat' title '#{names[i]}' with lines"
+  
+  g.puts readlines.map {|e| ap e; e.split("|").last.strip }.each_slice(labels.size).map.with_index {|res, i|
+    File.open("/tmp/data#{i}.dat", "w"){|f| 
+      f.puts res.map.with_index {|r,i| "#{labels[i]} #{r}"}.join("\n") 
+    }
+    "'/tmp/data#{i}.dat' using 2: xtic(1) title '#{names[i]}' with histogram"
   }.join(", ")
 }
 system "gnuplot -p /tmp/graph.g"
-open "graph.pdf"
+system "open graph.pdf"
