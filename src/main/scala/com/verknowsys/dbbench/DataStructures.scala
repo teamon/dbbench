@@ -6,7 +6,8 @@ case class ProcessInfo(
     val pid: Int,
     val cpu: Int,
     val mem: Int,
-    val s: String
+    val name: String,
+    val time: java.sql.Timestamp = new java.sql.Timestamp(new java.util.Date().getTime())
 ){
     def this() = this(0, 0, 0, "") // required by squeryl
 }
@@ -29,3 +30,4 @@ case class ProcessInfo(
 // // squeryl schema
 
 
+//  ~ 1.9.2p136 % psql -c "SELECT pg_database_size('huge_base_1000000')" huge_base_1000000

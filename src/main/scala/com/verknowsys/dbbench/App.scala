@@ -9,8 +9,6 @@ import java.io.File
 
 
 object App {
-    final val N = 1000
-
     
     def databases = List(
         new NeodatisLocalClient,
@@ -18,19 +16,13 @@ object App {
         new PostgresClient
     )
     
-    // (1 to (App.N / n)) foreach { i =>
-    //     // println(i)
-    //     saveList((1 to n)
-    //     
-        
-    // 1 -> 100000
-    // 10 -> 10000
-    // 100 -> 1000
-    // 1000 -> 100
-    // 10000 -> 10
-    
-    
-    
+    def localDatabases = List(
+        new NeodatisLocalClient,
+        new NeodatisRemoteClient,
+        new PostgresClient
+    )
+
+    // Intert time
     def benchmark1 {
         val factors = 1 :: 10 :: 100 :: 1000 :: 10000 :: Nil
         val N = 100000
@@ -41,12 +33,10 @@ object App {
 
                 val dbs = databases
 
-                def data = (1 to fact).map(new ProcessInfo(_, 20, 30, "foo"))
-
                 val res = dbs.map { db =>
                     val time = measure {
                         (1 to N/fact) foreach { i =>
-                            db.saveList(data)
+                            db.saveList((1 to fact).map(new ProcessInfo(_, i, x, "foo")))
                         }
                     }
 
@@ -67,12 +57,141 @@ object App {
         
     }
     
+    // Disk space usage
+    def benchmark2 {
+        val ns = 1000 :: 10000 :: 100000 :: 1000000 :: 10000000 :: Nil
+        ns.foreach { n =>
+            println("Storing " + n + " objects")
+            List(
+                new NeodatisLocalClient("huge_base_" + n),
+                new PostgresClient("huge_base_" + n)
+            ).foreach { db => 
+                println(db)
+                
+                (1 to (n / 1000)) foreach { i =>
+                    println("Part " + i)
+                    val data = (1 to 1000).map(new ProcessInfo(_, i, 30, "foo"))
+                    db.saveList(data)
+                }
+                
+                // Console.readLine("Press enter")
+                println()
+                db.disconnect
+            }
+        }
+    }
     
+    // Query by PID performance
+    def benchmark3 {
+        println("Query by PID performance")
+        val rand = new java.util.Random()
+        val pidsAndNames = (1 to 100) map { i => (math.abs(rand.nextInt), new java.math.BigInteger(300, rand).toString(32)) }
+
+        val data = (1 to 100) flatMap { i => pidsAndNames.map(pn => new ProcessInfo(pn._1, i, 30, pn._2)) }
+        val dbs = localDatabases
+
+        dbs.foreach { db =>
+            db.saveList(data)
+            println(db)
+        }
+        
+        (1 to 5) foreach { j => 
+            dbs.foreach { db => 
+                if(j==5) println(db)
+                (1 to 5) foreach { i =>
+                    val res = measure{
+                        var i = 0
+                        while(i < 100){
+                            db.queryByPID(pidsAndNames.head._1)
+                            i+=1
+                        }
+                    }
+                    if(j==5) println(res)
+                }
+            }
+        }
+
+        dbs.foreach(_.disconnect)
+    }
     
+    // Query by NAME performance
+    def benchmark4 {
+        println("Query by NAME performance")
+        val rand = new java.util.Random()
+        val pidsAndNames = (1 to 100) map { i => (math.abs(rand.nextInt), new java.math.BigInteger(300, rand).toString(32)) }
+
+        val data = (1 to 100) flatMap { i => pidsAndNames.map(pn => new ProcessInfo(pn._1, i, 30, pn._2)) }
+        val dbs = localDatabases
+
+        dbs.foreach { db =>
+            db.saveList(data)
+            println(db)
+            db.rebuildIndex
+        }
+        
+        
+        
+        (1 to 5) foreach { j => 
+            dbs.foreach { db => 
+                if(j==5) println(db)
+                (1 to 5) foreach { i =>
+                    val res = measure{
+                        var i = 0
+                        while(i < 100){
+                            db.queryByName(pidsAndNames.head._2)
+                            i+=1
+                        }
+                    }
+                    if(j==5) println(res)
+                }
+            }
+        }
+
+        dbs.foreach(_.disconnect)
+    }
+    
+    // Query by TIME performance
+    def benchmark5 {
+        println("Query by TIME performance")
+        val now = new java.util.Date()
+        def date(sec: Int) = new java.sql.Timestamp(now.getYear, now.getMonth, now.getDay, now.getHours, now.getMinutes, sec, 0)
+        
+        val rand = new java.util.Random()
+        val pidsAndNames = (1 to 100) map { i => (math.abs(rand.nextInt), new java.math.BigInteger(300, rand).toString(32)) }
+
+        val data = (1 to 100) flatMap { i => pidsAndNames.map(pn => new ProcessInfo(pn._1, i, 30, pn._2, date(i*5))) }
+        val dbs = localDatabases
+
+        dbs.foreach { db =>
+            db.saveList(data)
+            println(db)
+            // println("count = " + db.size)
+        }
+        
+        (1 to 5) foreach { j => 
+            dbs.foreach { db => 
+                if(j==5) println(db)
+                (1 to 5) foreach { i =>
+                    val res = measure{
+                        var i = 0
+                        while(i < 100){
+                            val res = db.queryByTime(date(5), date(100))
+                            // println(res.length)
+                            i+=1
+                        }
+                    }
+                    if(j==5) println(res)
+                }
+            }
+        }
+        dbs.foreach(_.disconnect)
+    }
+
+
     def main(args: Array[String]): Unit = {
         OdbConfiguration.setLogServerStartupAndShutdown(false)
 
-        benchmark1
+        benchmark4
     }
     
     def measure(f: => Unit) = {

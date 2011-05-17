@@ -4,18 +4,10 @@ import org.squeryl._
 import org.squeryl.adapters._
 import org.squeryl.PrimitiveTypeMode._
 
-class PostgresBatchClient(n: Int) extends PostgresClient {
-    override def saveBatch {
-        (1 to (App.N / n)) foreach { i =>
-            // println(i)
-            saveList((1 to n).map(new ProcessInfo(_, 20, 30, "foo")))
-        }
-    }
-}
-
-class PostgresClient extends Database {
+class PostgresClient(name: String = "base1") extends Database {
+    var conn: java.sql.Connection = null
     SessionFactory.concreteFactory = Some(() => {
-        val conn = java.sql.DriverManager.getConnection("jdbc:postgresql:base1", "teamon", "")
+        conn = java.sql.DriverManager.getConnection("jdbc:postgresql:" + name, "teamon", "")
         conn.setAutoCommit(false);
         Session.create(conn, new PostgreSqlAdapter)
     })
@@ -29,6 +21,9 @@ class PostgresClient extends Database {
     RDBMS.close     // drop tables
     RDBMS.create    // create tables
     
+    conn.commit()
+    
+    import RDBMS._
     
     def disconnect {
         session.close
@@ -42,28 +37,43 @@ class PostgresClient extends Database {
     }
     
     def saveList(list: Seq[Any]){
-        list match {
-            case x: Seq[ProcessInfo] =>
-                RDBMS.processes.insert(x)
-        }
+        // inTransaction {
+            list match {
+                case x: Seq[ProcessInfo] =>
+                    RDBMS.processes.insert(x)
+                    conn.commit()
+            }
+        // }
     }
     
     def saveAndCommit(obj: Any) {
         obj match {
             case x: ProcessInfo => 
-                inTransaction { 
-                    RDBMS.processes.insert(x) 
-                }
+                RDBMS.processes.insert(x) 
         }
     }
+    
+    def size = from(processes)(s => compute(count())).toInt
+    
+    def queryByPID(pid: Int) = {
+        processes.where(_.pid === pid).toList
+    }
+    
+    def queryByName(name: String) = {
+        processes.where(_.name === name).toList
+    }
+    
+     def queryByTime(from: java.sql.Timestamp, to: java.sql.Timestamp) = {
+         processes.where(_.time between(from,to)).toList
+     }
 }
 
 object RDBMS extends Schema {
     val processes = table[ProcessInfo]
     
-    // on(processes)(p => declare(
-    //     p.pid is(indexed)
-    // ))
+    on(processes)(p => declare(
+        p.name is(indexed)
+    ))
     
     def close = drop
 }
