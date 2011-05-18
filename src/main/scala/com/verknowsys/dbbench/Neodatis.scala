@@ -53,6 +53,14 @@ trait AbstractNeodatisClient extends Database {
         def `match`(pi: ProcessInfo) = pi.time.compareTo(from) >= 0 && pi.time.compareTo(to) <= 0
     }).toList
     
+    def queryByNameAndTime(name: String, from: java.sql.Timestamp, to: java.sql.Timestamp) = odb.getObjects(new SimpleNativeQuery {
+        def `match`(pi: ProcessInfo) = pi.name == name && pi.time.compareTo(from) >= 0 && pi.time.compareTo(to) <= 0
+    }).toList
+    
+    def queryByTimeAndName(name: String, from: java.sql.Timestamp, to: java.sql.Timestamp) = odb.getObjects(new SimpleNativeQuery {
+        def `match`(pi: ProcessInfo) = pi.time.compareTo(from) >= 0 && pi.time.compareTo(to) <= 0 && pi.name == name
+    }).toList
+    
     override def rebuildIndex {
         odb.getClassRepresentation(classOf[ProcessInfo]).rebuildIndex("processinfo-index", false)
     }

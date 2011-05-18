@@ -186,12 +186,86 @@ object App {
         }
         dbs.foreach(_.disconnect)
     }
+    
+    // Query by NAME and TIME performance
+    def benchmark6 {
+        println("Query by NAME and TIME performance")
+        val now = new java.util.Date()
+        def date(sec: Int) = new java.sql.Timestamp(now.getYear, now.getMonth, now.getDay, now.getHours, now.getMinutes, sec, 0)
+        
+        val rand = new java.util.Random()
+        val pidsAndNames = (1 to 100) map { i => (math.abs(rand.nextInt), new java.math.BigInteger(300, rand).toString(32)) }
+
+        val data = (1 to 100) flatMap { i => pidsAndNames.map(pn => new ProcessInfo(pn._1, i, 30, pn._2, date(i*5))) }
+        val dbs = localDatabases
+
+        dbs.foreach { db =>
+            db.saveList(data)
+            println(db)
+            // println("count = " + db.size)
+        }
+        
+        (1 to 5) foreach { j => 
+            dbs.foreach { db => 
+                if(j==5) println(db)
+                (1 to 5) foreach { i =>
+                    val res = measure{
+                        var i = 0
+                        while(i < 100){
+                            val res = db.queryByNameAndTime(pidsAndNames.head._2, date(5), date(100))
+                            // println(res.length)
+                            i+=1
+                        }
+                    }
+                    if(j==5) println(res)
+                }
+            }
+        }
+        dbs.foreach(_.disconnect)
+    }
+    
+    // Query by TIME and NAME performance
+    def benchmark7 {
+        println("Query by TIME and NAME performance")
+        val now = new java.util.Date()
+        def date(sec: Int) = new java.sql.Timestamp(now.getYear, now.getMonth, now.getDay, now.getHours, now.getMinutes, sec, 0)
+        
+        val rand = new java.util.Random()
+        val pidsAndNames = (1 to 100) map { i => (math.abs(rand.nextInt), new java.math.BigInteger(300, rand).toString(32)) }
+
+        val data = (1 to 100) flatMap { i => pidsAndNames.map(pn => new ProcessInfo(pn._1, i, 30, pn._2, date(i*5))) }
+        val dbs = localDatabases
+
+        dbs.foreach { db =>
+            db.saveList(data)
+            println(db)
+            // println("count = " + db.size)
+        }
+        
+        (1 to 5) foreach { j => 
+            dbs.foreach { db => 
+                if(j==5) println(db)
+                (1 to 5) foreach { i =>
+                    val res = measure{
+                        var i = 0
+                        while(i < 100){
+                            val res = db.queryByTimeAndName(pidsAndNames.head._2, date(5), date(100))
+                            // println(res.length)
+                            i+=1
+                        }
+                    }
+                    if(j==5) println(res)
+                }
+            }
+        }
+        dbs.foreach(_.disconnect)
+    }
 
 
     def main(args: Array[String]): Unit = {
         OdbConfiguration.setLogServerStartupAndShutdown(false)
 
-        benchmark4
+        benchmark5
     }
     
     def measure(f: => Unit) = {

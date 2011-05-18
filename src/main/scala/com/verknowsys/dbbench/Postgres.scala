@@ -66,6 +66,15 @@ class PostgresClient(name: String = "base1") extends Database {
      def queryByTime(from: java.sql.Timestamp, to: java.sql.Timestamp) = {
          processes.where(_.time between(from,to)).toList
      }
+     
+     def queryByNameAndTime(name: String, from: java.sql.Timestamp, to: java.sql.Timestamp) = {
+         processes.where(e => (e.name === name) and (e.time between(from,to))).toList
+     }
+     
+     def queryByTimeAndName(name: String, from: java.sql.Timestamp, to: java.sql.Timestamp) = {
+         processes.where(e => (e.time between(from,to)) and (e.name === name)).toList
+     }
+     
 }
 
 object RDBMS extends Schema {

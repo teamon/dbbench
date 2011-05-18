@@ -13,6 +13,8 @@ trait Database {
     def queryByPID(pid: Int): List[Any]
     def queryByName(name: String): List[Any]
     def queryByTime(from: java.sql.Timestamp, to: java.sql.Timestamp): List[Any]
+    def queryByNameAndTime(name: String, from: java.sql.Timestamp, to: java.sql.Timestamp): List[Any]
+    def queryByTimeAndName(name: String, from: java.sql.Timestamp, to: java.sql.Timestamp): List[Any]
     def rebuildIndex {}
 }
 
@@ -25,4 +27,6 @@ class NoopClient extends Database {
     def queryByPID(pid: Int) = Nil
     def queryByName(name: String) = Nil
     def queryByTime(from: java.sql.Timestamp, to: java.sql.Timestamp) = Nil
+    def queryByNameAndTime(name: String, from: java.sql.Timestamp, to: java.sql.Timestamp) = Nil
+    def queryByTimeAndName(name: String, from: java.sql.Timestamp, to: java.sql.Timestamp) = Nil
 }
