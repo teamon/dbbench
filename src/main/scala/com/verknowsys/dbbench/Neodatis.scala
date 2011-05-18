@@ -4,6 +4,7 @@ import org.neodatis.odb._
 import org.neodatis.odb.impl.core.query.criteria.CriteriaQuery
 import org.neodatis.odb.core.query.nq.SimpleNativeQuery
 import org.neodatis.odb.core.query.criteria.Where
+import org.neodatis.odb.impl.core.query.values.ValuesCriteriaQuery
 import java.io.File
 import scala.collection.JavaConversions._
 
@@ -60,6 +61,14 @@ trait AbstractNeodatisClient extends Database {
     def queryByTimeAndName(name: String, from: java.sql.Timestamp, to: java.sql.Timestamp) = odb.getObjects(new SimpleNativeQuery {
         def `match`(pi: ProcessInfo) = pi.time.compareTo(from) >= 0 && pi.time.compareTo(to) <= 0 && pi.name == name
     }).toList
+    
+    def sumCPU = odb.getValues(new ValuesCriteriaQuery(classOf[ProcessInfo]).sum("cpu")).getFirst.getByIndex(0).asInstanceOf[java.math.BigDecimal].intValue
+    
+    def sumMEM = odb.getValues(new ValuesCriteriaQuery(classOf[ProcessInfo]).sum("mem")).getFirst.getByIndex(0).asInstanceOf[java.math.BigDecimal].intValue
+    
+    def avgCPU = odb.getValues(new ValuesCriteriaQuery(classOf[ProcessInfo]).avg("cpu")).getFirst.getByIndex(0).asInstanceOf[java.math.BigDecimal].doubleValue
+    
+    def avgMEM = odb.getValues(new ValuesCriteriaQuery(classOf[ProcessInfo]).avg("mem")).getFirst.getByIndex(0).asInstanceOf[java.math.BigDecimal].doubleValue
     
     override def rebuildIndex {
         odb.getClassRepresentation(classOf[ProcessInfo]).rebuildIndex("processinfo-index", false)

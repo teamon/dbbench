@@ -260,12 +260,86 @@ object App {
         }
         dbs.foreach(_.disconnect)
     }
+    
+    // Calculate SUM(cpu) & SUM(mem)
+    def benchmark8 {
+        println("Calculate SUM(cpu) & MEM(mem)")
+         
+        val rand = new java.util.Random()
+        val pidsAndNames = (1 to 100) map { i => (math.abs(rand.nextInt), new java.math.BigInteger(300, rand).toString(32)) }
+
+        val data = (1 to 100) flatMap { i => pidsAndNames.map(pn => new ProcessInfo(pn._1, i, 30, pn._2)) }
+        val dbs = localDatabases
+
+        dbs.foreach { db =>
+            db.saveList(data)
+            println(db)
+            // println("count = " + db.size)
+        }
+        
+        (1 to 5) foreach { j => 
+            dbs.foreach { db => 
+                if(j==5) println(db)
+                (1 to 5) foreach { i =>
+                    val res = measure{
+                        var i = 0
+                        while(i < 20){
+                            val cpu = db.sumCPU
+                            val mem = db.sumMEM
+                            // val res = db.queryByTimeAndName(pidsAndNames.head._2, date(5), date(100))
+                            // println(res)
+                            i+=1
+                        }
+                    }
+                    if(j==5) println(res)
+                }
+            }
+        }
+        dbs.foreach(_.disconnect)
+    }
+    
+    // Calculate AVG(cpu) & AVG(mem)
+    def benchmark9 {
+        println("Calculate AVG(cpu) & AVG(mem)")
+         
+        val rand = new java.util.Random()
+        val pidsAndNames = (1 to 100) map { i => (math.abs(rand.nextInt), new java.math.BigInteger(300, rand).toString(32)) }
+
+        val data = (1 to 100) flatMap { i => pidsAndNames.map(pn => new ProcessInfo(pn._1, i, 30, pn._2)) }
+        val dbs = localDatabases
+
+        dbs.foreach { db =>
+            db.saveList(data)
+            println(db)
+            // println("count = " + db.size)
+        }
+        
+        (1 to 5) foreach { j => 
+            dbs.foreach { db => 
+                if(j==5) println(db)
+                (1 to 5) foreach { i =>
+                    val res = measure{
+                        var i = 0
+                        while(i < 20){
+                            val cpu = db.avgCPU
+                            val mem = db.avgMEM
+                            // val res = db.queryByTimeAndName(pidsAndNames.head._2, date(5), date(100))
+                            // println(res)
+                            i+=1
+                        }
+                    }
+                    if(j==5) println(res)
+                }
+            }
+        }
+        dbs.foreach(_.disconnect)
+    }
 
 
     def main(args: Array[String]): Unit = {
         OdbConfiguration.setLogServerStartupAndShutdown(false)
 
-        benchmark5
+        benchmark9
     }
     
     def measure(f: => Unit) = {

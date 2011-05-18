@@ -75,6 +75,14 @@ class PostgresClient(name: String = "base1") extends Database {
          processes.where(e => (e.time between(from,to)) and (e.name === name)).toList
      }
      
+     def sumCPU = from(processes)((s) => compute(sum(s.cpu))).get
+
+     def sumMEM = from(processes)((s) => compute(sum(s.mem))).get
+
+     def avgCPU = from(processes)((s) => compute(avg(s.cpu))).get
+
+     def avgMEM = from(processes)((s) => compute(avg(s.mem))).get
+     
 }
 
 object RDBMS extends Schema {
