@@ -29,7 +29,7 @@
 
 % dark green:
 
-\lstloadlanguages{Java}
+\lstloadlanguages{Java, SQL}
 \lstset{
   language=Java,
   morecomment=[s][\color{blue}]{\:}{\ },
@@ -43,7 +43,23 @@
   basicstyle=\ttfamily\color{black},
   commentstyle=\ttfamily\color{gray},
   keywordstyle=\ttfamily\color{red},
-  stringstyle=\color{green2},
+  stringstyle=\color{green},
+  numberstyle=\ttfamily\color{magenta}
+}
+\lstset{
+  language=SQL,
+  morecomment=[s][\color{blue}]{\:}{\ },
+  morecomment=[s][\color{magenta}]{\=\>}{\ },
+  basicstyle=\tiny,
+  tabsize=2,
+  breaklines=true,
+  breakatwhitespace=true,
+  numberstyle=\tiny,
+  firstnumber=1,
+  basicstyle=\ttfamily\color{black},
+  commentstyle=\ttfamily\color{gray},
+  keywordstyle=\ttfamily\color{red},
+  stringstyle=\color{red},
   numberstyle=\ttfamily\color{magenta}
 }
 
@@ -63,18 +79,18 @@
 
 The most important factor when choosing database management system for described architecture is its ability to perform fast insert of many records in very short time.
 
-storing 100000 objects devided in parts containing 1, 10, 100, 1000 or 10000 items.
+storing 100000 objects devided in parts containing 1, 10, 100, 1,000 or 10,000 items.
 
 In order to notice difference and exclude cache from benchmark each part was commited after saving. This opeartion required database transactions, which is enabled in NeoDatis by default and do not require any modifications. Code for PostgreSQL used standard SQL transactions. SQL provides a way of inserting several record within single query, while NeoDatis API lacks this feature. Pseudocode of performed operations is presented below.
 
-\begin{lstlisting}[caption=NeoDatis code]
+\begin{lstlisting}[language=Java, caption=NeoDatis code]
 for(obj in objects) {
     odb.store(obj)
 }
 odb.commit()
 \end{lstlisting}
 
-\begin{lstlisting}[caption=PostgeSQL code]
+\begin{lstlisting}[language=Java, caption=PostgeSQL code]
 psql.saveList(objects) // Performs only single INSERT 
                        // query with multiple values
 psql.commit()
@@ -101,10 +117,17 @@ Benchmark results are presented in Figure \ref{fig:batch_insert}.
 \section{Query performance}\label{sec:query_performance}
 
 \section{Disk space usage}\label{sec:disk_space_usage}
+One of the fundamental parameter of databse management system is disk space usage.
+Frequent storing of many objects can quickly fill up disk storage. To compare space used by databases the same amount of exactly identical objects has beed saved using each database. NeoDatis stores each database in separate file, its size was the measured value. PostgreSQL provides SQL function $pg\_database\_size$ which can be executed like:
 
+\begin{lstlisting}[caption=PostgeSQL database size]
+SELECT pg_database_size("dbname");
+\end{lstlisting}
 
+% Results are presented in Figure \ref{fig:size}
 
-
+In NeoDatis correlation between number of stored records and database file size is linear. This kind of characteristic provides an easy way of predicting database size for any number of records. However in comparision with PostgreSQL object oriented database uses about 4 times more disk space, for 1,000,000 
+records NeoDatis uses 218MB while PostgreSQL uses only 55MB.
 \end{document}
 
 
