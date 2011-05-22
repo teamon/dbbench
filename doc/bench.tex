@@ -10,12 +10,12 @@
 \usepackage{xcolor}
 \usepackage{xcolor, listings}
 \usepackage{caption}
-
+\usepackage{url}
 \usepackage{graphicx,pdflscape}
 \usepackage[utf8]{inputenc}
 \usepackage{listings}
 \usepackage{parskip}
-
+% \usepackage{fullpage}
 \definecolor{lightgrey}{HTML}{eeeeee}
 
 
@@ -29,39 +29,24 @@
 
 % dark green:
 
-\lstloadlanguages{Java, SQL}
+\lstloadlanguages{Java}
 \lstset{
-  language=Java,
-  morecomment=[s][\color{blue}]{\:}{\ },
-  morecomment=[s][\color{magenta}]{\=\>}{\ },
-  basicstyle=\tiny,
+  % language=Java,
+  % morecomment=[s][\color{blue}]{\:}{\ },
+  % morecomment=[s][\color{magenta}]{\=\>}{\ },
+  basicstyle=\footnotesize,
   tabsize=2,
   breaklines=true,
   breakatwhitespace=true,
-  numberstyle=\tiny,
-  firstnumber=1,
-  basicstyle=\ttfamily\color{black},
-  commentstyle=\ttfamily\color{gray},
-  keywordstyle=\ttfamily\color{red},
-  stringstyle=\color{green},
-  numberstyle=\ttfamily\color{magenta}
+  % numberstyle=\tiny,
+  % firstnumber=1,
+  % basicstyle=\ttfamily\color{black},
+  % commentstyle=\ttfamily\color{gray},
+  % keywordstyle=\ttfamily\color{red},
+  % stringstyle=\color{green},
+  % numberstyle=\ttfamily\color{magenta}
 }
-\lstset{
-  language=SQL,
-  morecomment=[s][\color{blue}]{\:}{\ },
-  morecomment=[s][\color{magenta}]{\=\>}{\ },
-  basicstyle=\tiny,
-  tabsize=2,
-  breaklines=true,
-  breakatwhitespace=true,
-  numberstyle=\tiny,
-  firstnumber=1,
-  basicstyle=\ttfamily\color{black},
-  commentstyle=\ttfamily\color{gray},
-  keywordstyle=\ttfamily\color{red},
-  stringstyle=\color{red},
-  numberstyle=\ttfamily\color{magenta}
-}
+
 
 \title{Comparision of NeoDatis and PostgreSQL.}
 \author{\href{mailto:i@teamon.eu}{Tymon Tobolski}}
@@ -73,15 +58,50 @@
 \maketitle
 \tableofcontents
 
+\section{Introduction}\label{sec:introduction}
+
+
+The object of research is highly efficient databse system for storing information about UNIX processes. Each couple of seconds processes are sampled and its PID, name, CPU and memory usage is saved into databse along with current timestamp. Measured parameters are time of storage and disk space usage for every database system. On the other hand persisting data is pointless without ability of creating reports out of it, in this case detailed usage for specified time range, PID or name as well as total and average statistics.
+
+The two compared databases are NeoDatis \footnote{Neodatis - \url{http://neodatis.org}} and PostgreSQL\footnote{PostgreSQL - \url{http://postgresql.org}}.
+
+PostgreSQL is an Relational Database Management System (RDBMS) that started over 15 years ago and currently has the position of "The world's most advanced open source database". It has been adopted by many companies and has proven its capatibilities.
+
+NeoDatis is an relatively young Object Oriented Database Management System (OODBMS) that runs on Java Virtual Machine and .NET platforms. It provides very easy and almost transparent persistance layer for object oriented applications. It stores data as objects instead of table records
+
+All test were written in Scala \footnote{Scala language - \url{http://scala-lang.org}} language that runs on top of Java Virtual Machine. While NeoDatis provides object level API, to achieve the same level of abstraction with PostgreSQL an Object Relational Mapper (ORM) library Squeryl \footnote{Squeryl ORM - \url{http://squeryl.org/}} has been used.
+
+In next sections \emph{record} in the context of PostgreSQL will refer to a record in database table, and to a persisted object in the context of NeoDatis.
+
+
+\section{Benchmark environment}\label{sec:tech_info}
+
+All benchmarks were performed on MacBook Pro running Mac OSX 10.6.7 with 2.4 GHz Intel Core 2 Duo processor and 8 GB of RAM.
+
+\begin{itemize}
+    \item Java Virtual Machine
+        \begin{lstlisting}[language=bash]
+        $ java -version
+        java version "1.6.0_24"
+        Java(TM) SE Runtime Environment (build 1.6.0_24-b07-334-10M3326)
+        Java HotSpot(TM) 64-Bit Server VM (build 19.1-b02-334, mixed mode)
+        \end{lstlisting}
+        
+    \item Scala language version 2.9
+    \item NeoDatis ODB version 1.9.30.689
+    \item Squeryl library version 0.9.4-RC6
+    \item JDBC PostgreSQL driver version 9.0-801.jdbc4
+    \item PostgreSQL version 9.0.4 (x86\_64)
+
+
+\end{itemize}
 
 \section{Batch insert performance}\label{sec:batch_insert}
 
 
 The most important factor when choosing database management system for described architecture is its ability to perform fast insert of many records in very short time.
 
-storing 100000 objects devided in parts containing 1, 10, 100, 1,000 or 10,000 items.
-
-In order to notice difference and exclude cache from benchmark each part was commited after saving. This opeartion required database transactions, which is enabled in NeoDatis by default and do not require any modifications. Code for PostgreSQL used standard SQL transactions. SQL provides a way of inserting several record within single query, while NeoDatis API lacks this feature. Pseudocode of performed operations is presented below.
+The measured value was time of storing 100000 objects devided in parts containing 1, 10, 100, 1,000 or 10,000 items. In order to notice difference and exclude cache from benchmark each part was commited after saving. This opeartion required database transactions, which is enabled in NeoDatis by default and do not require any modifications. Code for PostgreSQL used standard SQL transactions. SQL provides a way of inserting several record within single query, while NeoDatis API lacks this feature. Pseudocode of performed operations is presented below.
 
 \begin{lstlisting}[language=Java, caption=NeoDatis code]
 for(obj in objects) {
@@ -126,8 +146,22 @@ SELECT pg_database_size("dbname");
 
 % Results are presented in Figure \ref{fig:size}
 
-In NeoDatis correlation between number of stored records and database file size is linear. This kind of characteristic provides an easy way of predicting database size for any number of records. However in comparision with PostgreSQL object oriented database uses about 4 times more disk space, for 1,000,000 
-records NeoDatis uses 218MB while PostgreSQL uses only 55MB.
+In NeoDatis correlation between number of stored records and database file size is linear. This kind of characteristic provides an easy way of predicting database size for any number of records. Under 1,000,000 of reocrds PostgrSQL has slightly different characteristic, but it becames linear as soon as database size reaches more than 1 million objects. However, in comparision with PostgreSQL NeoDatis uses about 4 times more disk space for 1,000,000 records (NeoDatis uses 218MB while PostgreSQL uses only 55MB) and about 2.7x more for 10,000,000 records (NeoDatis - 2,184MB, PostgreSQL - 795MB).
+
+Detailed results are presented in Figure \ref{fig:size}.
+
+
+\begin{landscape}
+    \begin{figure}[p]
+        \includegraphics[scale=0.5]{FigSize.pdf}
+        \caption{Disk space usage}
+        \label{fig:size}
+    \end{figure}
+\end{landscape}
+
+
+
+
 \end{document}
 
 

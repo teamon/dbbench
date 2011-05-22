@@ -81,6 +81,28 @@ object App {
         }
     }
     
+    // Disk space usage (PG Only)
+    def benchmark2pg {
+        var n = 1000000
+        
+        val db = new PostgresClient("huge_base")
+        
+        Console.readLine("Press enter")
+         var x = 1;
+        while(true){
+            println("Storing " + n + " objects")
+           
+            (1 to (n / 1000)) foreach { i =>
+                println("Part " + i)
+                val data = (1 to 1000).map(new ProcessInfo(_, i, x, "foo"))
+                db.saveList(data)
+            }
+            x += 1
+            Console.readLine("Press enter")
+            println()
+        }
+    }
+    
     // Query by PID performance
     def benchmark3 {
         println("Query by PID performance")
@@ -339,7 +361,7 @@ object App {
     def main(args: Array[String]): Unit = {
         OdbConfiguration.setLogServerStartupAndShutdown(false)
 
-        benchmark9
+        benchmark2pg
     }
     
     def measure(f: => Unit) = {
